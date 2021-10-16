@@ -1,10 +1,7 @@
-# A class for performing hidden markov models
-
-import copy
 import numpy as np
 
-class HMM():
 
+class HMM():
     def __init__(self, transmission_prob, emission_prob, obs=None):
         '''
         Note that this implementation assumes that n, m, and T are small
@@ -29,8 +26,8 @@ class HMM():
         self.psi = []
         self.obs = obs
         self.emiss_ref = {}
-        self.forward_final = [0 , 0]
-        self.backward_final = [0 , 0]
+        self.forward_final = [0, 0]
+        self.backward_final = [0, 0]
         self.state_probs = []
         if obs is None and self.observations is not None:
             self.obs = self.assume_obs()
@@ -46,7 +43,7 @@ class HMM():
             self.emiss_ref[obs[i]] = i
         return obs
 
-    def train(self, observations, iterations = 10, verbose=True):
+    def train(self, observations, iterations=10, verbose=True):
         '''
         Trains the model parameters according to the observation sequence.
         Input:
@@ -54,7 +51,7 @@ class HMM():
         '''
         self.observations = observations
         self.obs = self.assume_obs()
-        self.psi = [[[0.0] * (len(self.observations)-1) for i in range(self.n)] for i in range(self.n)]
+        self.psi = [[[0.0] * (len(self.observations) - 1) for i in range(self.n)] for i in range(self.n)]
         self.gamma = [[0.0] * (len(self.observations)) for i in range(self.n)]
         for i in range(iterations):
             old_transmission = self.transmission_prob.copy()
@@ -81,10 +78,10 @@ class HMM():
         for i in range(len(self.observations)):
             self.gamma[i][0] = (float(self.forward[0][i] * self.backward[0][i]) /
                                 float(self.forward[0][i] * self.backward[0][i] +
-                                self.forward[1][i] * self.backward[1][i]))
+                                      self.forward[1][i] * self.backward[1][i]))
             self.gamma[i][1] = (float(self.forward[1][i] * self.backward[1][i]) /
                                 float(self.forward[0][i] * self.backward[0][i] +
-                                self.forward[1][i] * self.backward[1][i]))
+                                      self.forward[1][i] * self.backward[1][i]))
 
     def get_psi(self):
         '''
@@ -93,14 +90,14 @@ class HMM():
         for t in range(1, len(self.observations)):
             for j in range(self.n):
                 for i in range(self.n):
-                    self.psi[i][j][t-1] = self.calculate_psi(t, i, j)
+                    self.psi[i][j][t - 1] = self.calculate_psi(t, i, j)
 
     def calculate_psi(self, t, i, j):
         '''
         Calculates the psi for a transition from i->j for t > 0.
         '''
-        alpha_tminus1_i = self.forward[i][t-1]
-        a_i_j = self.transmission_prob[j+1][i+1]
+        alpha_tminus1_i = self.forward[i][t - 1]
+        a_i_j = self.transmission_prob[j + 1][i + 1]
         beta_t_j = self.backward[j][t]
         observation = self.observations[t]
         b_j = self.emission_prob[self.emiss_ref[observation]][j]
@@ -113,10 +110,10 @@ class HMM():
         '''
         self.get_state_probs()
         for i in range(self.n):
-            self.transmission_prob[i+1][0] = self.gamma[0][i]
-            self.transmission_prob[-1][i+1] = self.gamma[-1][i] / self.state_probs[i]
+            self.transmission_prob[i + 1][0] = self.gamma[0][i]
+            self.transmission_prob[-1][i + 1] = self.gamma[-1][i] / self.state_probs[i]
             for j in range(self.n):
-                self.transmission_prob[j+1][i+1] = self.estimate_transmission(i, j)
+                self.transmission_prob[j + 1][i + 1] = self.estimate_transmission(i, j)
             for obs in range(self.m):
                 self.emission_prob[obs][i] = self.estimate_emission(i, obs)
 
@@ -159,7 +156,7 @@ class HMM():
             return backward
         # Recursion for T --> 0
         else:
-            backward = self.backward_recurse(index+1)
+            backward = self.backward_recurse(index + 1)
             for state in range(self.n):
                 if index >= 0:
                     backward[state][index] = self.backward_probability(index, backward, state)
@@ -201,7 +198,7 @@ class HMM():
             return forward
         # Recursion
         else:
-            forward = self.forward_recurse(index-1)
+            forward = self.forward_recurse(index - 1)
             for state in range(self.n):
                 if index != len(self.observations):
                     forward[state][index] = self.forward_probability(index, forward, state)
@@ -227,10 +224,11 @@ class HMM():
             if not final:
                 # Recursion
                 obs_index = self.emiss_ref[self.observations[index]]
-                p[prev_state] = forward[prev_state][index-1] * self.transmission_prob[state + 1][prev_state + 1] * self.emission_prob[obs_index][state]
+                p[prev_state] = forward[prev_state][index - 1] * self.transmission_prob[state + 1][prev_state + 1] * \
+                                self.emission_prob[obs_index][state]
             else:
                 # Termination
-                p[prev_state] = forward[prev_state][index-1] * self.transmission_prob[self.n][prev_state + 1]
+                p[prev_state] = forward[prev_state][index - 1] * self.transmission_prob[self.n][prev_state + 1]
         return sum(p)
 
     def likelihood(self, new_observations):
@@ -244,20 +242,21 @@ class HMM():
         forward = new_hmm.forward_recurse(len(new_observations))
         return sum(new_hmm.forward_final)
 
+
 if __name__ == '__main__':
     # Example inputs from Jason Eisner's Ice Cream and Baltimore Summer example
     # http://www.cs.jhu.edu/~jason/papers/#eisner-2002-tnlp
     emission = np.array([[0.7, 0], [0.2, 0.3], [0.1, 0.7]])
-    transmission = np.array([ [0, 0, 0, 0], [0.5, 0.8, 0.2, 0], [0.5, 0.1, 0.7, 0], [0, 0.1, 0.1, 0]])
-    observations = ['2','3','3','2','3','2','3','2','2','3','1','3','3','1','1',
-                    '1','2','1','1','1','3','1','2','1','1','1','2','3','3','2',
-                    '3','2','2']
+    transmission = np.array([[0, 0, 0, 0], [0.5, 0.8, 0.2, 0], [0.5, 0.1, 0.7, 0], [0, 0.1, 0.1, 0]])
+    observations = ['2', '3', '3', '2', '3', '2', '3', '2', '2', '3', '1', '3', '3', '1', '1',
+                    '1', '2', '1', '1', '1', '3', '1', '2', '1', '1', '1', '2', '3', '3', '2',
+                    '3', '2', '2']
     model = HMM(transmission, emission)
     model.train(observations)
     print("Model transmission probabilities:\n{}".format(model.transmission_prob))
     print("Model emission probabilities:\n{}".format(model.emission_prob))
     # Probability of a new sequence
-    new_seq = ['1', '2', '3']
+    new_seq = ['3', '2', '1']
     print("Finding likelihood for {}".format(new_seq))
     likelihood = model.likelihood(new_seq)
     print("Likelihood: {}".format(likelihood))
